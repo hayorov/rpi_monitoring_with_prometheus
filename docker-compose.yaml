@@ -27,20 +27,18 @@ services:
       # Storing prometheus data in the hosts /mnt/media/appdata/prometheus directory
       - /media/tm/appdata/prometheus:/prometheus
 
-  alertmanager:
-    image: quay.io/prometheus/alertmanager:latest
-    restart: always
-    container_name: alertmanager
-    extra_hosts: *pi
-    ports:
-      - "9093:9093"
-
   grafana:
     user: root
     image: grafana/grafana:master-ubuntu
     restart: always
     container_name: grafana
     extra_hosts: *pi
+    environment:
+      - GF_RENDERING_SERVER_URL=http://renderer:8081/render
+      - GF_RENDERING_CALLBACK_URL=http://grafana:3000/
+      - GF_SERVER_ROOT_URL=http://raspberrypi:3000/
+    links:
+      - renderer
     depends_on:
       - prometheus
     ports:
@@ -49,6 +47,13 @@ services:
     volumes:
       # Storing grafana data in the hosts /mnt/media/appdata/grafana directory
       - /media/tm/appdata/grafana:/var/lib/grafana
+  renderer:
+    user: root
+    restart: always
+    image: adejong/grafana-image-renderer-pi:1.0.8-beta2
+    container_name: grafana-image-renderer-pi
+    ports:
+      - 8081
 
   # If you are not using raspberry pi then you can delete this section. This collects and exposes cpu temperature and
   # frequency. At the time of writing, these stats are not collected by node_exporter itself.
